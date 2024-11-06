@@ -54,3 +54,17 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+
+config :live_beats,
+  stream_host: System.get_env("STREAM_HOST", "localhost"),
+  rtmp_port: String.to_integer(System.get_env("RTMP_PORT", "1935")),
+  hls_port: String.to_integer(System.get_env("HLS_PORT", "8080")),
+  stream_storage_path: System.get_env("STREAM_STORAGE_PATH", "priv/static/streams")
+
+config :live_beats, LiveBeats.Streaming.NodeManager,
+  bootstrap_nodes: [
+    "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+    # Add more bootstrap nodes
+  ],
+  swarm_port: 4001,
+  enable_relay: true

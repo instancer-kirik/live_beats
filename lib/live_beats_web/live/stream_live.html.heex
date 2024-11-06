@@ -1,0 +1,164 @@
+<div class="stream-container">
+  <%= if @current_stream do %>
+    <div class="video-player">
+      <video-js id="stream-player" class="vjs-default-skin">
+        <source src={@stream_url} type="application/x-mpegURL">
+      </video-js>
+    </div>
+  <% else %>
+    <div class="stream-setup">
+      <button phx-click="start_stream">Start Streaming</button>
+    </div>
+  <% end %>
+  
+  <div class="music-player-container">
+    <%= if @current_track do %>
+      <div class="now-playing flex items-center space-x-4 p-4 bg-gray-800 rounded-lg">
+        <img src={@current_track.artwork_url} class="w-16 h-16 rounded" />
+        <div class="track-info">
+          <h3 class="text-lg font-bold text-white"><%= @current_track.title %></h3>
+          <p class="text-sm text-gray-400"><%= @current_track.artist %></p>
+        </div>
+        <div class="player-controls flex space-x-2">
+          <button phx-click="toggle_playback" class="text-white">
+            <%= if @player_state == :playing do %>
+              <i class="fas fa-pause"></i>
+            <% else %>
+              <i class="fas fa-play"></i>
+            <% end %>
+          </button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="interaction-container flex">
+    <div class="stream-chat flex-1">
+      <!-- Existing chat functionality -->
+      
+      <!-- Tips Feed -->
+      <div class="tips-feed mt-4">
+        <%= for tip <- @tips do %>
+          <div class="tip-notification text-sm text-gray-300">
+            <%= String.slice(tip.from, 0..5) %>... tipped
+            <span class="font-bold"><%= tip.amount %> STRM</span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    
+    <div class="wallet-controls p-4">
+      <%= if @wallet do %>
+        <div class="connected-wallet text-sm text-gray-300">
+          <span>Connected: <%= String.slice(@wallet.address, 0..5) %>...</span>
+          <div class="token-balance">
+            Balance: <%= @token_balance %> STRM
+          </div>
+          
+          <!-- Tipping Interface -->
+          <div class="tip-interface mt-2">
+            <form phx-submit="send-tip" class="flex space-x-2">
+              <input type="number" 
+                     name="amount" 
+                     class="w-20 bg-gray-700 rounded px-2"
+                     placeholder="Amount"
+                     min="1"
+                     max={@token_balance} />
+              <button type="submit" class="tip-button bg-purple-600 px-3 py-1 rounded">
+                Send Tip
+              </button>
+            </form>
+          </div>
+        </div>
+      <% else %>
+        <button phx-click="connect-rabby" class="wallet-btn">
+          Connect Rabby Wallet
+        </button>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="token-management-container">
+    <!-- Token Selection -->
+    <div class="token-selector mb-4">
+      <label class="text-sm text-gray-400">Select Token</label>
+      <div class="flex space-x-2 mt-1">
+        <%= for token <- supported_tokens() do %>
+          <button 
+            phx-click="select-token"
+            phx-value-token={token.symbol}
+            class={"token-btn #{if @selected_token == token.symbol, do: 'active'}"}>
+            <%= token.symbol %>
+            <span class="text-sm">
+              <%= Map.get(@token_balances, token.symbol, 0) %>
+            </span>
+          </button>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Staking Interface -->
+    <div class="staking-interface mb-4">
+      <h3 class="text-lg font-medium text-white">Stake Tokens</h3>
+      <div class="flex items-center space-x-2 mt-2">
+        <form phx-submit="stake-tokens" class="flex space-x-2">
+          <input type="number"
+                 name="amount"
+                 class="w-24 bg-gray-700 rounded px-2"
+                 placeholder="Amount"
+                 min="1"
+                 max={@token_balances[@selected_token]} />
+          <button type="submit" class="stake-button bg-green-600 px-3 py-1 rounded">
+            Stake
+          </button>
+        </form>
+      </div>
+      <div class="text-sm text-gray-400 mt-1">
+        Staked: <%= @staked_amount %> <%= @selected_token %>
+      </div>
+    </div>
+
+    <!-- Rewards Section -->
+    <div class="rewards-section mb-4">
+      <h3 class="text-lg font-medium text-white">Streaming Rewards</h3>
+      <div class="text-sm text-gray-400">
+        Available: <%= @rewards_earned %> STRM
+      </div>
+      <button phx-click="claim-rewards" class="mt-2 bg-purple-600 px-3 py-1 rounded">
+        Claim Rewards
+      </button>
+    </div>
+
+    <!-- Tip Goal Progress -->
+    <div class="tip-goal-container mb-4">
+      <h3 class="text-lg font-medium text-white">Tip Goal</h3>
+      <div class="relative pt-1">
+        <div class="flex mb-2 items-center justify-between">
+          <div class="text-sm text-gray-400">
+            <%= Enum.sum(@tips, & &1.amount) %> / <%= @tip_goal %>
+          </div>
+          <%= if @tip_milestone do %>
+            <div class="text-sm text-purple-400">
+              <%= format_milestone(@tip_milestone) %>
+            </div>
+          <% end %>
+        </div>
+        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-700">
+          <div style={"width: #{tip_progress_percentage(@tips, @tip_goal)}%"}
+               class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-purple-500">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Milestone Celebration Template -->
+<template id="goal-celebration">
+  <div class="celebration-overlay fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="celebration-content text-center">
+      <h2 class="text-4xl font-bold text-white mb-4">🎉 Goal Reached! 🎉</h2>
+      <p class="text-xl text-purple-300">Thank you for your amazing support!</p>
+    </div>
+  </div>
+</template> 

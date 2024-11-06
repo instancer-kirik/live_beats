@@ -58,5 +58,10 @@ defmodule LiveBeatsWeb.Router do
       live "/:profile_username", ProfileLive, :show
       live "/profile/settings", SettingsLive, :edit
     end
+
+    # Add new streaming routes
+    live "/streams", StreamLive, :index
+    live "/streams/:id", StreamLive, :show
+    live "/discover", StreamDiscoveryLive, :index
   end
 end

@@ -58,7 +58,11 @@ defmodule LiveBeats.MixProject do
       {:bumblebee, github: "elixir-nx/bumblebee"},
       {:exla, ">= 0.0.0"},
       {:req, "~> 0.4"},
-      {:flame, "~> 0.1.12"}
+      {:flame, "~> 0.1.12"},
+      {:libp2p, "~> 0.1.0"},
+      {:ipfs, "~> 0.1.0"},
+      {:multiaddr, "~> 1.0"},
+      {:protobuf, "~> 0.8"}
     ]
   end
 
