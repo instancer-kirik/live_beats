@@ -1,5 +1,8 @@
 defmodule LiveBeatsWeb.Components.WalletConnect do
   use LiveBeatsWeb, :live_component
+  import Phoenix.HTML
+  import Phoenix.HTML.Form
+  use PhoenixHTMLHelpers
 
   def render(assigns) do
     ~H"""

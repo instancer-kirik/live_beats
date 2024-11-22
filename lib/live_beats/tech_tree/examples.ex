@@ -1,6 +1,5 @@
 defmodule LiveBeats.TechTree.Examples do
   alias LiveBeats.TechTree
-  alias LiveBeats.TechTree.{Item, Part, Kit, Documentation}
 
   def inventory_examples do
     # Create a new part with inventory tracking

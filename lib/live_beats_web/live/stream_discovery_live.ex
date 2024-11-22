@@ -2,6 +2,15 @@ defmodule LiveBeatsWeb.StreamDiscoveryLive do
   use LiveBeatsWeb, :live_view
   alias LiveBeats.Streaming
 
+  def platform_color(platform) do
+    case platform do
+      "twitch" -> "text-purple-500"
+      "youtube" -> "text-red-500"
+      "kick" -> "text-green-500"
+      _ -> "text-gray-500"
+    end
+  end
+
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do

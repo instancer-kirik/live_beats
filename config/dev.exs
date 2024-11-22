@@ -8,8 +8,8 @@ config :live_beats, :files,
   transport_opts: []
 
 config :live_beats, :github,
-  client_id: System.fetch_env!("LIVE_BEATS_GITHUB_CLIENT_ID"),
-  client_secret: System.fetch_env!("LIVE_BEATS_GITHUB_CLIENT_SECRET")
+  client_id: System.get_env("LIVE_BEATS_GITHUB_CLIENT_ID", "temp_dev_id"),
+  client_secret: System.get_env("LIVE_BEATS_GITHUB_CLIENT_SECRET", "temp_dev_secret")
 
 # Configure your database
 config :live_beats, LiveBeats.Repo,

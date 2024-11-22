@@ -1,67 +1,73 @@
 defmodule LiveBeatsWeb.Router do
   use LiveBeatsWeb, :router
-
-  import LiveBeatsWeb.UserAuth,
-    only: [redirect_if_user_is_authenticated: 2]
+  import LiveBeatsWeb.UserAuth
 
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, {LiveBeatsWeb.Layouts, :root}
+    plug :put_root_layout, html: {LiveBeatsWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :fetch_current_user
   end
 
   pipeline :api do
     plug :accepts, ["json"]
   end
 
-  scope "/", LiveBeatsWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
-
-    get "/oauth/callbacks/:provider", OAuthCallbackController, :new
+  # Set up authentication pipelines
+  pipeline :authenticate_user do
+    plug :require_authenticated_user
   end
 
-  if Mix.env() in [:dev, :test] do
+  pipeline :redirect_if_authenticated do
+    plug :redirect_if_user_is_authenticated
+  end
+
+  scope "/deats" do
+    pipe_through [:browser, :redirect_if_authenticated]
+
+    live "/", LiveBeatsWeb.HomeLive, :index
+    live "/profile/settings", LiveBeatsWeb.UserSettingsLive, :edit
+    live "/:username", LiveBeatsWeb.ProfileLive, :show
+    live "/:username/songs/:id", LiveBeatsWeb.SongLive, :show
+  end
+
+  scope "/deats" do
+    pipe_through [:browser, :authenticate_user]
+
+    # Add authenticated routes here
+  end
+
+  scope "/deats" do
+    pipe_through :browser
+
+    # Add public routes here
+  end
+
+  # OAuth routes
+  scope "/auth", LiveBeatsWeb do
+    pipe_through [:browser, :redirect_if_authenticated]
+
+    get "/:provider", AuthController, :request
+    get "/:provider/callback", AuthController, :callback
+    delete "/logout", AuthController, :delete
+  end
+
+  # Enable LiveDashboard in development
+  if Application.compile_env(:live_beats, :dev_routes) do
+    # If you want to use the LiveDashboard in production, you should put
+    # it behind authentication and allow only admins to access it.
+    # If your application does not have an admins-only section yet,
+    # you can use Plug.BasicAuth to set up some basic authentication
+    # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
-    scope "/" do
-      pipe_through :browser
-      live_dashboard "/dashboard", metrics: LiveBeatsWeb.Telemetry
-    end
-  end
-
-  if Mix.env() == :dev do
     scope "/dev" do
       pipe_through :browser
 
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
+      live_dashboard "/dashboard", metrics: LiveBeatsWeb.Telemetry
     end
-  end
-
-  scope "/", LiveBeatsWeb do
-    pipe_through :browser
-
-    get "/", RedirectController, :redirect_authenticated
-    get "/files/:id", FileController, :show
-
-    delete "/signout", OAuthCallbackController, :sign_out
-
-    live_session :default, on_mount: [{LiveBeatsWeb.UserAuth, :current_user}, LiveBeatsWeb.Nav] do
-      live "/signin", SignInLive, :index
-    end
-
-    live_session :authenticated,
-      on_mount: [{LiveBeatsWeb.UserAuth, :ensure_authenticated}, LiveBeatsWeb.Nav] do
-      live "/:profile_username/songs/new", ProfileLive, :new
-      live "/:profile_username", ProfileLive, :show
-      live "/profile/settings", SettingsLive, :edit
-    end
-
-    # Add new streaming routes
-    live "/streams", StreamLive, :index
-    live "/streams/:id", StreamLive, :show
-    live "/discover", StreamDiscoveryLive, :index
   end
 end

@@ -18,6 +18,10 @@ defmodule LiveBeats.Streaming.DiscoveryNode do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
+  def get_available_peers do
+    GenServer.call(__MODULE__, :get_available_peers)
+  end
+
   @impl true
   def init(_opts) do
     {:ok, %State{}, {:continue, :setup_discovery}}
@@ -59,95 +63,98 @@ defmodule LiveBeats.Streaming.DiscoveryNode do
     {:noreply, new_state}
   end
 
-  # Periodic heartbeat to maintain peer list
   @impl true
   def handle_info(:heartbeat, state) do
-    broadcast_announcement(state)
+    broadcast_heartbeat(state)
     schedule_heartbeat()
     {:noreply, state}
   end
 
-  # Clean up stale peers
   @impl true
-  def handle_info(:cleanup, state) do
+  def handle_info(:cleanup_peers, state) do
     new_state = cleanup_stale_peers(state)
     schedule_cleanup()
     {:noreply, new_state}
   end
 
-  # Private functions
+  @impl true
+  def handle_call(:get_available_peers, _from, state) do
+    peers = state.known_peers
+    |> Map.keys()
+    |> Enum.filter(fn peer_id ->
+      peer = Map.get(state.known_peers, peer_id)
+      is_peer_alive?(peer, state)
+    end)
+
+    {:reply, peers, state}
+  end
+
+  defp broadcast_local_streams(state, peer_id) do
+    # Get local streams
+    local_streams = Map.get(state.peer_streams, state.node_id, [])
+    
+    # Send them to the new peer
+    LibP2P.send_message(state.libp2p_host, peer_id, {:streams, local_streams})
+    
+    state
+  end
+
   defp update_peer_info(state, peer_id, streams) do
-    %State{state |
-      known_peers: Map.put(state.known_peers, peer_id, %{
-        last_seen: DateTime.utc_now(),
-        stream_count: length(streams)
-      }),
+    now = System.system_time(:second)
+    
+    new_peer_info = %{
+      last_seen: now,
+      streams: streams
+    }
+
+    %{state |
+      known_peers: Map.put(state.known_peers, peer_id, new_peer_info),
       peer_streams: Map.put(state.peer_streams, peer_id, streams)
     }
   end
 
   defp aggregate_streams(state) do
-    # Combine local and peer streams
     all_streams = state.peer_streams
     |> Map.values()
     |> List.flatten()
-    |> Enum.concat(Map.values(state.stream_registry))
-    |> Enum.uniq_by(& &1.id)
-    |> sort_by_relevance()
+    |> Enum.uniq()
 
-    # Broadcast aggregated streams
-    Phoenix.PubSub.broadcast(
-      LiveBeats.PubSub,
-      "stream_discovery",
-      {:streams_updated, all_streams}
-    )
-
-    state
+    %{state | stream_registry: Map.new(all_streams, &{&1.id, &1})}
   end
 
-  defp sort_by_relevance(streams) do
-    Enum.sort_by(streams, fn stream ->
-      {
-        stream.viewer_count,
-        stream.stake_amount,
-        -DateTime.to_unix(stream.started_at)
-      }
-    end, :desc)
-  end
-
-  defp broadcast_announcement(state) do
-    local_streams = Map.values(state.stream_registry)
-
-    LibP2P.publish(state.libp2p_host, "live_beats:discovery", %{
-      peer_id: state.node_id,
-      streams: local_streams,
-      timestamp: DateTime.utc_now()
-    })
+  defp is_peer_alive?(peer, state) do
+    now = System.system_time(:second)
+    last_seen = peer.last_seen
+    now - last_seen < Application.get_env(:live_beats, :peer_timeout, 30)
   end
 
   defp cleanup_stale_peers(state) do
-    timeout = Application.get_env(:live_beats, :peer_timeout, 30)
-    now = DateTime.utc_now()
+    alive_peers = state.known_peers
+    |> Enum.filter(fn {_id, peer} -> is_peer_alive?(peer, state) end)
+    |> Map.new()
 
-    {active_peers, stale_peers} = Enum.split_with(state.known_peers, fn {_id, info} ->
-      DateTime.diff(now, info.last_seen) < timeout
-    end)
-
-    # Remove stale peers
-    new_state = %State{state |
-      known_peers: Map.new(active_peers),
-      peer_streams: Map.drop(state.peer_streams, Keyword.keys(stale_peers))
+    %{state |
+      known_peers: alive_peers,
+      peer_streams: Map.take(state.peer_streams, Map.keys(alive_peers))
     }
+  end
 
-    # Re-aggregate without stale peers
-    aggregate_streams(new_state)
+  defp broadcast_heartbeat(state) do
+    message = {:heartbeat, state.node_id, Map.get(state.peer_streams, state.node_id, [])}
+    
+    Enum.each(state.discovery_topics, fn topic ->
+      LibP2P.publish(state.libp2p_host, topic, message)
+    end)
   end
 
   defp schedule_heartbeat do
-    Process.send_after(self(), :heartbeat, :timer.seconds(10))
+    Process.send_after(self(), :heartbeat, heartbeat_interval())
   end
 
   defp schedule_cleanup do
-    Process.send_after(self(), :cleanup, :timer.seconds(30))
+    Process.send_after(self(), :cleanup_peers, cleanup_interval())
   end
+
+  defp heartbeat_interval, do: Application.get_env(:live_beats, :heartbeat_interval, 5000)
+  defp cleanup_interval, do: Application.get_env(:live_beats, :cleanup_interval, 10000)
 end

@@ -1,5 +1,6 @@
 defmodule LiveBeatsWeb.ProfileLive do
   use LiveBeatsWeb, :live_view
+  import LiveBeatsWeb.Gettext
 
   alias LiveBeats.{Accounts, MediaLibrary, MP3Stat}
   alias LiveBeatsWeb.Presence
@@ -33,7 +34,11 @@ defmodule LiveBeatsWeb.ProfileLive do
             (you)
           <% end %>
           <span>
-            – <%= ngettext("%{count} song", "%{count} songs", @songs_count) %>
+            – <%= if @songs_count == 1 do %>
+                1 song
+              <% else %>
+                <%= @songs_count %> songs
+              <% end %>
           </span>
         </div>
         <.link href={@profile.external_homepage_url} target="_blank" class="text-sm text-gray-600">
@@ -228,6 +233,7 @@ defmodule LiveBeatsWeb.ProfileLive do
       |> assign_presences()
 
     {:ok, socket, temporary_assigns: [presences: %{}]}
+
   end
 
   def stream_songs(socket) do

@@ -32,10 +32,13 @@ defmodule LiveBeats.Security.UrlValidator do
     0x00..0x1F,           # Control characters
     0x7F..0x9F,           # Extended control characters
     0x2028..0x2029,       # Line/paragraph separators
-    0xFEFF,               # Byte order mark
+    [0xFEFF],             # Byte order mark
     0xFFF0..0xFFFF        # Specials
   ]
-  |> Enum.flat_map(&Enum.to_list/1)
+  |> Enum.flat_map(fn
+    first..last -> Enum.to_list(first..last)
+    list when is_list(list) -> list
+  end)
   |> List.to_string()
 
   # Regex for basic URL format validation

@@ -13,6 +13,9 @@ defmodule LiveBeatsWeb.Presence do
   @pubsub LiveBeats.PubSub
 
   use LiveBeatsWeb, :html
+  import Phoenix.HTML
+  import Phoenix.HTML.Form
+  use PhoenixHTMLHelpers
 
   alias LiveBeats.{Accounts, MediaLibrary}
   alias LiveBeatsWeb.Presence.BadgeComponent
@@ -122,7 +125,7 @@ end
 defmodule LiveBeatsWeb.Presence.BadgeComponent do
   use LiveBeatsWeb, :live_component
 
-  #  https://fly.io/docs/reference/regions/
+  #   https://fly.io/docs/reference/regions/
   @region_names %{
     "ams" => "Amsterdam, Netherlands",
     "atl" => "Atlanta, Georgia (US)",

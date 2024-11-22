@@ -13,9 +13,6 @@ defmodule LiveBeats.MixProject do
     ]
   end
 
-  # Configuration for the OTP application.
-  #
-  # Type `mix help compile.app` for more information.
   def application do
     [
       mod: {LiveBeats.Application, []},
@@ -23,24 +20,21 @@ defmodule LiveBeats.MixProject do
     ]
   end
 
-  # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  # Specifies your project dependencies.
-  #
-  # Type `mix help deps` for examples and options.
   defp deps do
     [
       {:phoenix, "~> 1.7.12"},
       {:dns_cluster, "~> 0.1.1"},
       {:phoenix_live_view, "~> 0.20.17"},
       {:phoenix_live_dashboard, "~> 0.8.3"},
-      {:phoenix_ecto, "~> 4.4"},
+      {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.11"},
       {:ecto_network, "~> 1.3.0"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.0"},
+      {:phoenix_html_helpers, "~> 1.0"},
       {:phoenix_live_reload, "~> 1.4", only: :dev},
       {:floki, ">= 0.30.0", only: :test},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
@@ -49,30 +43,23 @@ defmodule LiveBeats.MixProject do
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.23"},
+      {:blockchain_core, in_umbrella: true},
       {:jason, "~> 1.4"},
       {:plug_cowboy, "~> 2.6"},
       {:mint, "~> 1.5"},
-      {:heroicons, "~> 0.2.2"},
+      {:heroicons, github: "tailwindlabs/heroicons", override: true},
       {:bandit, "~> 1.2"},
-      {:castore, "~> 1.0"},
+      {:castore, "~> 1.0", override: true},
       {:tailwind, "~> 0.2.1"},
-      {:bumblebee, github: "elixir-nx/bumblebee"},
-      {:exla, ">= 0.0.0"},
       {:req, "~> 0.4"},
       {:flame, "~> 0.3.0"},
-      {:libp2p, "~> 0.1.0"},
-      {:ipfs, "~> 0.1.0"},
+      {:libp2p, github: "helium/erlang-libp2p"},  # Using Helium's erlang-libp2p implementation
       {:multiaddr, "~> 1.0"},
-      {:protobuf, "~> 0.8"}
+      {:protobuf, "~> 0.8"},
+      {:mishka_chelekom, "~> 0.0.1"}  # Adding mishka_chelekom for form components
     ]
   end
 
-  # Aliases are shortcuts or tasks specific to the current project.
-  # For example, to install project dependencies and perform other setup tasks, run:
-  #
-  #     $ mix setup
-  #
-  # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
       setup: ["deps.get", "ecto.setup"],

@@ -59,6 +59,14 @@ defmodule LiveBeats.Streaming.Stream do
     GenServer.call(via_tuple(stream_id), {:handle_tip, tip})
   end
 
+  def update_stake(stream_id, stake_info) do
+    GenServer.call(via_tuple(stream_id), {:update_stake, stake_info})
+  end
+
+  def get_stake(stream_id) do
+    GenServer.call(via_tuple(stream_id), :get_stake)
+  end
+
   # GenServer Callbacks
   @impl true
   def init(opts) do
@@ -89,56 +97,71 @@ defmodule LiveBeats.Streaming.Stream do
   @impl true
   def handle_continue(:setup_stream, state) do
     case setup_stream(state) do
-      {:ok, stream_data} ->
-        new_state = %State{state |
-          stream_key: stream_data.stream_key,
-          playback_url: stream_data.playback_url,
-          rtmp_url: stream_data.rtmp_url,
-          status: :ready,
-          recording_path: stream_data.recording_path
+      {:ok, stream_info} ->
+        new_state = %{state |
+          rtmp_url: stream_info.rtmp_url,
+          playback_url: stream_info.playback_url,
+          status: :ready
         }
-
-        # Broadcast stream ready event
-        Phoenix.PubSub.broadcast(
-          LiveBeats.PubSub,
-          "streams",
-          {:stream_ready, new_state}
-        )
-
         {:noreply, new_state}
-
       {:error, reason} ->
-        Logger.error("Failed to create stream: #{inspect(reason)}")
-        cleanup_stream(state)
-        {:stop, :normal, state}
+        Logger.error("Failed to setup stream: #{inspect(reason)}")
+        {:stop, reason, state}
     end
   end
 
   @impl true
   def handle_call(:get_stream, _from, state) do
-    {:reply, state, state}
+    {:reply, {:ok, state_to_map(state)}, state}
+  end
+
+  def handle_call({:update_title, title}, _from, state) do
+    new_state = %{state | title: title}
+    {:reply, :ok, new_state}
   end
 
   def handle_call({:add_viewer, viewer_id}, _from, state) do
-    if Map.has_key?(state.viewers, viewer_id) do
-      {:reply, {:error, :already_viewing}, state}
-    else
-      new_state = %State{state |
-        viewers: Map.put(state.viewers, viewer_id, %{
-          joined_at: DateTime.utc_now()
-        })
-      }
-      broadcast_viewer_count(new_state)
-      {:reply, :ok, new_state}
-    end
+    new_state = update_in(state.viewers, &Map.put(&1, viewer_id, %{
+      joined_at: DateTime.utc_now(),
+      tips_sent: 0
+    }))
+    {:reply, :ok, new_state}
   end
 
   def handle_call({:remove_viewer, viewer_id}, _from, state) do
-    new_state = %State{state |
-      viewers: Map.delete(state.viewers, viewer_id)
-    }
-    broadcast_viewer_count(new_state)
+    new_state = update_in(state.viewers, &Map.delete(&1, viewer_id))
     {:reply, :ok, new_state}
+  end
+
+  def handle_call({:handle_tip, tip}, _from, state) do
+    new_state = %{state |
+      tips: [tip | state.tips],
+      rewards_earned: state.rewards_earned + tip.amount
+    }
+    
+    if viewer = get_in(state.viewers, [tip.from]) do
+      new_state = update_in(new_state.viewers[tip.from], fn v ->
+        %{v | tips_sent: v.tips_sent + tip.amount}
+      end)
+    end
+
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call({:update_stake, stake_info}, _from, state) do
+    new_state = %{state |
+      stake_amount: stake_info.amount,
+      streamer_address: stake_info.address
+    }
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call(:get_stake, _from, state) do
+    stake_info = %{
+      amount: state.stake_amount,
+      address: state.streamer_address
+    }
+    {:reply, {:ok, stake_info}, state}
   end
 
   def handle_call(:stop_stream, _from, state) do
@@ -146,100 +169,63 @@ defmodule LiveBeats.Streaming.Stream do
     {:stop, :normal, :ok, state}
   end
 
-  @impl true
-  def handle_call({:handle_tip, tip}, _from, state) do
-    new_state = %State{state |
-      tips: [tip | state.tips],
-      rewards_earned: calculate_rewards(state.tips)
-    }
-
-    broadcast_tip_event(new_state, tip)
-    {:reply, :ok, new_state}
+  # Private Functions
+  defp get_token_contract do
+    Application.get_env(:live_beats, :token_contract) ||
+      raise "Token contract address not configured"
   end
 
-  # Private Functions
-  defp via_tuple(stream_id) do
-    {:via, Registry, {LiveBeats.Streaming.Registry, stream_id}}
+  defp get_rewards_contract do
+    Application.get_env(:live_beats, :rewards_contract) ||
+      raise "Rewards contract address not configured"
   end
 
   defp setup_stream(state) do
-    LiveBeats.Streaming.TranscodingManager.create_stream(state.id, %{
-      name: "stream_#{state.id}",
-      profiles: ["720p", "480p", "360p"],
-      recording: true
-    })
+    case LiveBeats.Streaming.StreamManager.setup_rtmp_stream(state.stream_key, %{
+      title: state.title,
+      owner_id: state.owner_id
+    }) do
+      {:ok, stream_info} -> {:ok, stream_info}
+      error -> error
+    end
   end
 
   defp cleanup_stream(state) do
-    # Stop transcoding
-    LiveBeats.Streaming.TranscodingManager.stop_stream(state.id)
-
-    # Save recording if enabled
-    if state.recording_path do
-      save_recording(state)
+    # Cleanup resources
+    LiveBeats.Streaming.StreamManager.cleanup_stream(state.stream_key)
+    
+    # Distribute rewards if any
+    if state.rewards_earned > 0 do
+      distribute_rewards(state)
     end
-
-    # Notify viewers
-    Phoenix.PubSub.broadcast(
-      LiveBeats.PubSub,
-      "stream:#{state.id}",
-      {:stream_ended, state.id}
-    )
   end
 
-  defp broadcast_viewer_count(state) do
-    Phoenix.PubSub.broadcast(
-      LiveBeats.PubSub,
-      "stream:#{state.id}",
-      {:viewer_count_updated, state.id, map_size(state.viewers)}
-    )
+  defp distribute_rewards(state) do
+    try do
+      {:ok, _tx} = Web3.Contract.send(
+        state.rewards_contract,
+        "distributeRewards",
+        [state.streamer_address, state.rewards_earned],
+        gas: 200_000
+      )
+    rescue
+      e ->
+        Logger.error("Failed to distribute rewards: #{inspect(e)}")
+    end
   end
 
-  def generate_stream_key(user_id) do
+  defp state_to_map(state) do
+    Map.from_struct(state)
+  end
+
+  defp via_tuple(stream_id) do
+    {:via, Registry, {LiveBeats.StreamRegistry, stream_id}}
+  end
+
+  defp generate_stream_key(user_id) do
     salt = LiveBeats.Streaming.Config.get_stream_key_salt()
     key = :crypto.strong_rand_bytes(16)
     hash = :crypto.hash(:sha256, "#{key}#{salt}#{user_id}")
     Base.encode16(hash) <> "_" <> to_string(user_id)
-  end
-
-  def validate_stream_key(stream_key) do
-    case String.split(stream_key, "_") do
-      [key, user_id] when byte_size(key) == 64 ->
-        case LiveBeats.Accounts.get_user(user_id) do
-          nil -> {:error, :invalid_user}
-          user -> {:ok, user}
-        end
-      _ -> {:error, :invalid_format}
-    end
-  end
-
-  defp save_recording(state) do
-    recording_filename = "stream_#{state.id}_#{DateTime.to_unix(state.started_at)}.mp4"
-    recording_path = Path.join([state.recording_path, recording_filename])
-
-    # Save recording metadata to database
-    {:ok, _recording} = LiveBeats.Content.create_recording(%{
-      stream_id: state.id,
-      owner_id: state.owner_id,
-      title: state.title,
-      path: recording_path,
-      duration: DateTime.diff(DateTime.utc_now(), state.started_at)
-    })
-  end
-
-  defp calculate_rewards(tips) do
-    # Implement your rewards calculation logic here
-    # For example, you can use a simple sum of tips
-    Enum.sum(tips)
-  end
-
-  defp broadcast_tip_event(state, tip) do
-    # Implement your broadcast logic here
-    # For example, you can broadcast a tip event to the stream
-    Phoenix.PubSub.broadcast(
-      LiveBeats.PubSub,
-      "stream:#{state.id}",
-      {:tip_received, state.id, tip}
-    )
   end
 end

@@ -32,6 +32,7 @@ defmodule LiveBeats.Streaming.PlatformAggregator do
 
   @impl true
   def handle_continue(:initial_fetch, state) do
+    schedule_refresh()
     {:noreply, refresh_streams(state)}
   end
 
@@ -39,6 +40,27 @@ defmodule LiveBeats.Streaming.PlatformAggregator do
   def handle_info(:refresh, state) do
     schedule_refresh()
     {:noreply, refresh_streams(state)}
+  end
+
+  def get_streams(platform) do
+    GenServer.call(__MODULE__, {:get_streams, platform})
+  end
+
+  def get_all_streams do
+    GenServer.call(__MODULE__, :get_all_streams)
+  end
+
+  @impl true
+  def handle_call({:get_streams, platform}, _from, state) do
+    case Map.fetch(state.cached_streams, platform) do
+      {:ok, streams} -> {:reply, {:ok, streams}, state}
+      :error -> {:reply, {:error, :not_found}, state}
+    end
+  end
+
+  @impl true
+  def handle_call(:get_all_streams, _from, state) do
+    {:reply, {:ok, state.cached_streams}, state}
   end
 
   defp refresh_streams(state) do
@@ -52,23 +74,28 @@ defmodule LiveBeats.Streaming.PlatformAggregator do
       end
     end)
 
-    broadcast_updates(streams)
-
-    %State{state |
+    %{state |
       cached_streams: streams,
       last_refresh: DateTime.utc_now()
     }
   end
 
-  defp schedule_refresh do
-    Process.send_after(self(), :refresh, @refresh_interval)
+  defp fetch_platform_streams(platform, platforms) do
+    case Map.fetch(platforms, platform) do
+      {:ok, module} ->
+        try do
+          module.fetch_streams()
+        rescue
+          e ->
+            Logger.error("Error fetching streams from #{platform}: #{inspect(e)}")
+            {:error, :fetch_failed}
+        end
+      :error ->
+        {:error, :platform_not_found}
+    end
   end
 
-  defp broadcast_updates(streams) do
-    Phoenix.PubSub.broadcast(
-      LiveBeats.PubSub,
-      "external_streams",
-      {:external_streams_updated, streams}
-    )
+  defp schedule_refresh do
+    Process.send_after(self(), :refresh, @refresh_interval)
   end
 end

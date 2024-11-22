@@ -23,6 +23,9 @@ defmodule LiveBeats.Application do
     LiveBeats.MediaLibrary.attach()
     whisper_serving? = parent || FLAME.Backend.impl() != FLAME.FlyBackend
 
+    # Create ETS table for stream chunks
+    :ets.new(:stream_chunks, [:named_table, :public, :set])
+
     children =
       [
         whisper_serving? && {Nx.Serving, name: LiveBeats.WhisperServing, serving: load_serving()},
@@ -45,6 +48,7 @@ defmodule LiveBeats.Application do
          min_idle_shutdown_after: :timer.seconds(30),
          idle_shutdown_after: :timer.seconds(30),
          log: :info},
+        {LiveBeats.Streaming.Relay, node_type: :viewer_relay},
         # Start the Endpoint (http/https)
         !parent && LiveBeatsWeb.Endpoint,
         # Expire songs every six hours

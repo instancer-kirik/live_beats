@@ -6,7 +6,6 @@ defmodule LiveBeats.TechTree do
   import Ecto.Query, warn: false
   alias LiveBeats.Repo
   alias LiveBeats.TechTree.{Item, Part, Kit, Documentation}
-  alias LiveBeats.Shops.Shop
 
   # Item functions
   def list_items(opts \\ []) do
