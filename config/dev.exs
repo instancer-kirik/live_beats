@@ -13,9 +13,9 @@ config :live_beats, :github,
 
 # Configure your database
 config :live_beats, LiveBeats.Repo,
-  database: "veix_live_beats_dev",
   username: "postgres",
   password: "root",
+  database: "veix_live_beats_dev",
   hostname: "localhost",
   migration_lock: false,
   stacktrace: true,

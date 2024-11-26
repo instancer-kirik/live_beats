@@ -42,7 +42,7 @@ defmodule LiveBeats.MixProject do
       {:finch, "~> 0.18"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
-      {:gettext, "~> 0.23"},
+      {:gettext, "~> 0.26.2"},
       {:blockchain_core, in_umbrella: true},
       {:jason, "~> 1.4"},
       {:plug_cowboy, "~> 2.7.2"},
