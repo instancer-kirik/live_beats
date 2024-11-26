@@ -2,7 +2,7 @@ defmodule LiveBeatsWeb.ProfileLive do
   use LiveBeatsWeb, :live_view
   import LiveBeatsWeb.Gettext
 
-  alias LiveBeats.{Accounts, MediaLibrary, MP3Stat}
+  alias LiveBeats.{Acts, MediaLibrary, MP3Stat}
   alias LiveBeatsWeb.Presence
   alias LiveBeatsWeb.ProfileLive.{UploadFormComponent}
 
@@ -208,14 +208,14 @@ defmodule LiveBeatsWeb.ProfileLive do
       if current_user.username == profile_username do
         current_user
       else
-        Accounts.get_user_by!(username: profile_username)
+        Acts.get_user_by!(username: profile_username)
       end
 
     profile = MediaLibrary.get_profile!(profile_user)
 
     if connected?(socket) do
       MediaLibrary.subscribe_to_profile(profile)
-      Accounts.subscribe(current_user.id)
+      Acts.subscribe(current_user.id)
       Presence.subscribe(profile)
     end
 
@@ -324,7 +324,7 @@ defmodule LiveBeatsWeb.ProfileLive do
     end
   end
 
-  def handle_info({Accounts, %Accounts.Events.ActiveProfileChanged{} = event}, socket) do
+  def handle_info({Acts, %Acts.Events.ActiveProfileChanged{} = event}, socket) do
     {:noreply, assign(socket, active_profile_id: event.new_profile_user_id)}
   end
 
@@ -397,7 +397,7 @@ defmodule LiveBeatsWeb.ProfileLive do
 
   def handle_info({MediaLibrary, _}, socket), do: {:noreply, socket}
 
-  def handle_info({Accounts, _}, socket), do: {:noreply, socket}
+  def handle_info({Acts, _}, socket), do: {:noreply, socket}
 
   defp stop_song(socket, song_id) do
     song = MediaLibrary.get_song!(song_id)

@@ -1,9 +1,9 @@
-defmodule LiveBeats.Accounts do
+defmodule LiveBeats.Acts do
   import Ecto.Query
   import Ecto.Changeset
 
   alias LiveBeats.Repo
-  alias LiveBeats.Accounts.{User, Identity, Events}
+  alias LiveBeats.Acts.{User, Identity, Events}
 
   @pubsub LiveBeats.PubSub
 

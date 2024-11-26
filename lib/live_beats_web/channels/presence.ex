@@ -17,7 +17,7 @@ defmodule LiveBeatsWeb.Presence do
   import Phoenix.HTML.Form
   use PhoenixHTMLHelpers
 
-  alias LiveBeats.{Accounts, MediaLibrary}
+  alias LiveBeats.{Acts, MediaLibrary}
   alias LiveBeatsWeb.Presence.BadgeComponent
 
   def track_profile_user(%MediaLibrary.Profile{} = profile, current_user_id) do
@@ -74,7 +74,7 @@ defmodule LiveBeatsWeb.Presence do
     users =
       presences
       |> Map.keys()
-      |> Accounts.get_users_map()
+      |> Acts.get_users_map()
       |> Enum.into(%{})
 
     for {key, %{metas: metas}} <- presences, into: %{} do

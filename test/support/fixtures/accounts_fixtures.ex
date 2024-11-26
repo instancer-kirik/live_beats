@@ -1,7 +1,7 @@
-defmodule LiveBeats.AccountsFixtures do
+defmodule LiveBeats.ActsFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `LiveBeats.Accounts` context.
+  entities via the `LiveBeats.Acts` context.
   """
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
@@ -48,7 +48,7 @@ defmodule LiveBeats.AccountsFixtures do
     emails = []
     token = "token"
 
-    {:ok, user} = LiveBeats.Accounts.register_github_user(primary_email, info, emails, token)
+    {:ok, user} = LiveBeats.Acts.register_github_user(primary_email, info, emails, token)
 
     user
   end

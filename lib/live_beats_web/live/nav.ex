@@ -2,7 +2,7 @@ defmodule LiveBeatsWeb.Nav do
   import Phoenix.LiveView
   use Phoenix.Component
 
-  alias LiveBeats.{Accounts, MediaLibrary}
+  alias LiveBeats.{Acts, MediaLibrary}
   alias LiveBeatsWeb.{ProfileLive, SettingsLive}
 
   def on_mount(:default, _params, _session, socket) do
@@ -61,7 +61,7 @@ defmodule LiveBeatsWeb.Nav do
 
   defp handle_info(_, socket), do: {:cont, socket}
 
-  defp rate_limited_ping_broadcast(socket, %Accounts.User{} = user, rtt) when is_integer(rtt) do
+  defp rate_limited_ping_broadcast(socket, %Acts.User{} = user, rtt) when is_integer(rtt) do
     now = System.system_time(:millisecond)
     last_ping_at = socket.assigns[:last_ping_at]
 

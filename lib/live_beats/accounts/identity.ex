@@ -1,8 +1,8 @@
-defmodule LiveBeats.Accounts.Identity do
+defmodule LiveBeats.Acts.Identity do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias LiveBeats.Accounts.{Identity, User}
+  alias LiveBeats.Acts.{Identity, User}
 
   # providers
   @github "github"

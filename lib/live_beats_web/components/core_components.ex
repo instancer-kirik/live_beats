@@ -4,13 +4,13 @@ defmodule LiveBeatsWeb.CoreComponents do
 
   alias Phoenix.LiveView.JS
 
-  alias LiveBeats.Accounts
+  alias LiveBeats.Acts
   alias LiveBeats.MediaLibrary
 
   def home_path(nil = _current_user), do: "/"
-  def home_path(%Accounts.User{} = current_user), do: profile_path(current_user)
+  def home_path(%Acts.User{} = current_user), do: profile_path(current_user)
 
-  def profile_upload_path(%Accounts.User{} = user) do
+  def profile_upload_path(%Acts.User{} = user) do
     ~p"/#{user.username}/songs/new"
   end
 
@@ -18,7 +18,7 @@ defmodule LiveBeatsWeb.CoreComponents do
     unverified_path(LiveBeatsWeb.Endpoint, LiveBeatsWeb.Router, ~p"/#{username}")
   end
 
-  def profile_path(%Accounts.User{} = current_user) do
+  def profile_path(%Acts.User{} = current_user) do
     profile_path(current_user.username)
   end
 

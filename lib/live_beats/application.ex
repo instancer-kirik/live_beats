@@ -6,15 +6,47 @@ defmodule LiveBeats.Application do
   use Application
 
   def load_serving do
-    {:ok, whisper} = Bumblebee.load_model({:hf, "openai/whisper-tiny"})
+    {:ok, model_info} = Bumblebee.load_model({:hf, "openai/whisper-tiny"})
     {:ok, featurizer} = Bumblebee.load_featurizer({:hf, "openai/whisper-tiny"})
     {:ok, tokenizer} = Bumblebee.load_tokenizer({:hf, "openai/whisper-tiny"})
 
-    Bumblebee.Audio.speech_to_text(whisper, featurizer, tokenizer,
-      compile: [batch_size: 1],
-      max_new_tokens: 100,
-      defn_options: [compiler: EXLA]
-    )
+    serving = 
+      Nx.Serving.new(
+        fn defn_options ->
+          # Initialize serving with defn options
+          Nx.Defn.default_options(defn_options)
+
+          fn input ->
+            # Convert input to mono if needed
+            mono_input = 
+              case Nx.shape(input) do
+                {samples, channels} when channels > 1 ->
+                  # Average across channels to get mono
+                  Nx.mean(input, axes: [1])
+                {_samples} ->
+                  input
+                shape ->
+                  raise ArgumentError, "expected audio tensor of shape {samples} or {samples, channels}, got: #{inspect(shape)}"
+              end
+
+            # Apply featurizer to get input features
+            features = Bumblebee.apply_featurizer(featurizer, mono_input)
+
+            # Run model prediction
+            outputs = 
+              Axon.predict(model_info.model, model_info.params, %{
+                "input_features" => features
+              })
+
+            # Post-process to get text
+            Bumblebee.postprocess(outputs, tokenizer)
+          end
+        end,
+        compiler: EXLA,
+        batch_size: 1
+      )
+
+    serving
   end
 
   @impl true

@@ -2,9 +2,9 @@ defmodule LiveBeats.MediaLibraryTest do
   use LiveBeats.DataCase
 
   alias LiveBeats.MediaLibrary
-  alias LiveBeats.Accounts
+  alias LiveBeats.Acts
   alias LiveBeats.MediaLibrary.Song
-  import LiveBeats.AccountsFixtures
+  import LiveBeats.ActsFixtures
   import LiveBeats.MediaLibraryFixtures
 
   describe "songs" do
@@ -66,7 +66,7 @@ defmodule LiveBeats.MediaLibraryTest do
       song = song_fixture(%{user_id: user.id})
       assert :ok = MediaLibrary.delete_song(song)
       assert_raise Ecto.NoResultsError, fn -> MediaLibrary.get_song!(song.id) end
-      assert Accounts.get_user(user.id).songs_count == 9
+      assert Acts.get_user(user.id).songs_count == 9
     end
 
     test "change_song/1 returns a song changeset" do
@@ -121,7 +121,7 @@ defmodule LiveBeats.MediaLibraryTest do
       assert {:ok, results} =
                MediaLibrary.import_songs(user, songs_changesets, fn one, two -> {one, two} end)
 
-      assert Accounts.get_user(user.id).songs_count == 3
+      assert Acts.get_user(user.id).songs_count == 3
 
       created_songs = Enum.reduce(results, [], fn {_key, song}, acc -> [song | acc] end)
 
@@ -133,7 +133,7 @@ defmodule LiveBeats.MediaLibraryTest do
 
       MediaLibrary.expire_songs_older_than(2, :month)
 
-      assert Accounts.get_user(user.id).songs_count == 1
+      assert Acts.get_user(user.id).songs_count == 1
     end
 
     defp add_n_months(datetime, n) do

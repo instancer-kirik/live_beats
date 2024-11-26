@@ -1,7 +1,7 @@
 defmodule LiveBeatsWeb.SettingsLive do
   use LiveBeatsWeb, :live_view
 
-  alias LiveBeats.Accounts
+  alias LiveBeats.Acts
 
   def render(assigns) do
     ~H"""
@@ -104,19 +104,19 @@ defmodule LiveBeatsWeb.SettingsLive do
   end
 
   def mount(_params, _session, socket) do
-    changeset = Accounts.change_settings(socket.assigns.current_user, %{})
+    changeset = Acts.change_settings(socket.assigns.current_user, %{})
     {:ok, assign(socket, changeset: changeset)}
   end
 
   def handle_params(_, _, socket), do: {:noreply, socket}
 
   def handle_event("validate", %{"user" => params}, socket) do
-    changeset = Accounts.change_settings(socket.assigns.current_user, params)
+    changeset = Acts.change_settings(socket.assigns.current_user, params)
     {:noreply, assign(socket, changeset: Map.put(changeset, :action, :validate))}
   end
 
   def handle_event("save", %{"user" => params}, socket) do
-    case Accounts.update_public_settings(socket.assigns.current_user, params) do
+    case Acts.update_public_settings(socket.assigns.current_user, params) do
       {:ok, user} ->
         {:noreply,
          socket

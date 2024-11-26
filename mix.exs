@@ -25,17 +25,17 @@ defmodule LiveBeats.MixProject do
 
   defp deps do
     [
-      {:phoenix, "~> 1.7.12"},
+      {:phoenix, "~> 1.7.14"},
       {:dns_cluster, "~> 0.1.1"},
       {:phoenix_live_view, "~> 0.20.17"},
-      {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:phoenix_live_dashboard, "~> 0.8.5"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.11"},
       {:ecto_network, "~> 1.3.0"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.0"},
-      {:phoenix_html_helpers, "~> 1.0"},
-      {:phoenix_live_reload, "~> 1.4", only: :dev},
+      {:phoenix_html_helpers, "~> 1.0.1"},
+      {:phoenix_live_reload, "~> 1.5", only: :dev},
       {:floki, ">= 0.30.0", only: :test},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.14"},
@@ -45,32 +45,32 @@ defmodule LiveBeats.MixProject do
       {:gettext, "~> 0.23"},
       {:blockchain_core, in_umbrella: true},
       {:jason, "~> 1.4"},
-      {:plug_cowboy, "~> 2.6"},
+      {:plug_cowboy, "~> 2.7.2"},
       {:mint, "~> 1.5"},
-      {:heroicons, github: "tailwindlabs/heroicons", override: true},
+      {:heroicons, "~> 0.5.6"},
       {:bandit, "~> 1.2"},
       {:castore, "~> 1.0", override: true},
-      {:tailwind, "~> 0.2.1"},
+      {:tailwind, "~> 0.2.4"},
       {:req, "~> 0.4"},
       {:flame, "~> 0.3.0"},
-      {:libp2p, github: "helium/erlang-libp2p"},  # Using Helium's erlang-libp2p implementation
-      {:multiaddr, "~> 1.0"},
-      {:protobuf, "~> 0.8"},
-      {:mishka_chelekom, "~> 0.0.1"}  # Adding mishka_chelekom for form components
+      {:nx, "~> 0.9.2"},
+      {:bumblebee, "~> 0.6.0"},
+      {:acts, in_umbrella: true},
+      {:multiaddr, "~> 1.1"},
+      {:protobuf, "~> 0.10"},
+      {:mishka_chelekom, "~> 0.0.1", only: [:dev, :test]}
     ]
   end
 
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup"],
+      setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "assets.deploy": [
-        "tailwind default --minify",
-        "esbuild default --minify",
-        "phx.digest"
-      ]
+      "assets.setup": ["esbuild.install --if-missing"],
+      "assets.build": ["esbuild default"],
+      "assets.deploy": ["esbuild default --minify", "phx.digest"]
     ]
   end
 end

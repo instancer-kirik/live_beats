@@ -44,24 +44,22 @@ defmodule LiveBeats do
   ## Examples
 
       defmodule MyModule do
-        def handle_execute({Accounts, %Accounts.Events.UpdateUpdated{user: user}}) do
+        def handle_execute({Acts, %Acts.Events.UpdateUpdated{user: user}}) do
           IO.inspect({:user_updated, user})
         end
       end
 
-      iex> LiveBeats.attach(MyModule, to: {Accounts, Accounts.Events.UserUpdated})
+      iex> LiveBeats.attach(MyModule, to: {Acts, Acts.Events.UserUpdated})
       :ok
 
-      iex> LiveBeats.execute(Accounts, %Accounts.Events.UserUpdated{user: new_user})
+      iex> LiveBeats.execute(Acts, %Acts.Events.UserUpdated{user: new_user})
   """
   def attach(target_mod, opts) when is_atom(target_mod) do
     {src_mod, struct_mod} = Keyword.fetch!(opts, :to)
-    _ = struct_mod.__struct__
+    _ = struct_mod.__struct__()
 
     :ok =
-      :telemetry.attach(target_mod, [src_mod, struct_mod], &__MODULE__.handle_execute/4, %{
-        target: target_mod
-      })
+      :telemetry.attach(target_mod, [src_mod, struct_mod], &__MODULE__.handle_execute/4, %{target: target_mod})
   end
 
   @doc """
@@ -71,19 +69,19 @@ defmodule LiveBeats do
 
   ## Examples
 
-      iex> LiveBeats.attach(MyModule, to: {Accounts, Accounts.Events.UserUpdated})
+      iex> LiveBeats.attach(MyModule, to: {Acts, Acts.Events.UserUpdated})
       :ok
 
-      iex> LiveBeats.execute(Accounts, %Accounts.Events.UserUpdated{user: new_user})
+      iex> LiveBeats.execute(Acts, %Acts.Events.UserUpdated{user: new_user})
   """
   def execute(src_mod, event_struct) when is_struct(event_struct) do
     :telemetry.execute([src_mod, event_struct.__struct__], event_struct, %{})
   end
 
   @doc false
-  def handle_execute([src_mod, event_mod], %event_mod{} = event_struct, _meta, %{target: target}) do
+  def handle_execute([src_mod, event_mod], %event_mod{} = event_struct, _meta, config) do
     try do
-      target.handle_execute({src_mod, event_struct})
+      config.target.handle_execute({src_mod, event_struct})
     catch
       kind, err ->
         Logger.error("""

@@ -4,12 +4,12 @@ defmodule LiveBeatsWeb.UserAuth do
   import Phoenix.Controller
 
   alias Phoenix.LiveView
-  alias LiveBeats.Accounts
+  alias LiveBeats.Acts
 
   def on_mount(:current_user, _params, session, socket) do
     case session do
       %{"user_id" => user_id} ->
-        {:cont, Phoenix.Component.assign_new(socket, :current_user, fn -> Accounts.get_user(user_id) end)}
+        {:cont, Phoenix.Component.assign_new(socket, :current_user, fn -> Acts.get_user(user_id) end)}
 
       %{} ->
         {:cont, Phoenix.Component.assign(socket, :current_user, nil)}
@@ -20,9 +20,9 @@ defmodule LiveBeatsWeb.UserAuth do
     case session do
       %{"user_id" => user_id} ->
         new_socket =
-          Phoenix.Component.assign_new(socket, :current_user, fn -> Accounts.get_user!(user_id) end)
+          Phoenix.Component.assign_new(socket, :current_user, fn -> Acts.get_user!(user_id) end)
 
-        %Accounts.User{} = new_socket.assigns.current_user
+        %Acts.User{} = new_socket.assigns.current_user
         {:cont, new_socket}
 
       %{} ->
@@ -87,7 +87,7 @@ defmodule LiveBeatsWeb.UserAuth do
   """
   def fetch_current_user(conn, _opts) do
     user_id = get_session(conn, :user_id)
-    user = user_id && Accounts.get_user(user_id)
+    user = user_id && Acts.get_user(user_id)
     assign(conn, :current_user, user)
   end
 
@@ -125,7 +125,7 @@ defmodule LiveBeatsWeb.UserAuth do
   def require_authenticated_admin(conn, _opts) do
     user = conn.assigns[:current_user]
 
-    if user && LiveBeats.Accounts.admin?(user) do
+    if user && LiveBeats.Acts.admin?(user) do
       assign(conn, :current_admin, user)
     else
       conn

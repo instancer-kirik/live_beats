@@ -143,7 +143,7 @@ defmodule LiveBeats.Wallet.Connector do
       {:ok, session} ->
         {:ok, %{
           type: :wallet_connect,
-          address: session.accounts |> List.first(),
+          address: session.acts |> List.first(),
           chain_id: session.chain_id
         }}
       error ->

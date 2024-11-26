@@ -2,14 +2,14 @@ defmodule LiveBeatsWeb.OAuthCallbackController do
   use LiveBeatsWeb, :controller
   require Logger
 
-  alias LiveBeats.Accounts
+  alias LiveBeats.Acts
 
   def new(conn, %{"provider" => "github", "code" => code, "state" => state}) do
     client = github_client(conn)
 
     with {:ok, info} <- client.exchange_access_token(code: code, state: state),
          %{info: info, primary_email: primary, emails: emails, token: token} = info,
-         {:ok, user} <- Accounts.register_github_user(primary, info, emails, token) do
+         {:ok, user} <- Acts.register_github_user(primary, info, emails, token) do
       conn
       |> put_flash(:info, "Welcome #{user.email}")
       |> LiveBeatsWeb.UserAuth.log_in_user(user)

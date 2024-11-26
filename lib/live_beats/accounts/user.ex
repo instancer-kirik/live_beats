@@ -1,8 +1,8 @@
-defmodule LiveBeats.Accounts.User do
+defmodule LiveBeats.Acts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias LiveBeats.Accounts.{User, Identity}
+  alias LiveBeats.Acts.{User, Identity}
 
   schema "users" do
     field :email, :string

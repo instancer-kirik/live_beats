@@ -1,6 +1,6 @@
 defmodule LiveBeatsWeb.RedirectControllerTest do
   use LiveBeatsWeb.ConnCase
-  import LiveBeats.AccountsFixtures
+  import LiveBeats.ActsFixtures
 
   test "GET / redirects to signin when not logged in", %{conn: conn} do
     conn = get(conn, "/")

@@ -2,7 +2,7 @@ defmodule LiveBeatsWeb.ProfileLiveTest do
   use LiveBeatsWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import LiveBeats.AccountsFixtures
+  import LiveBeats.ActsFixtures
 
   alias LiveBeats.MediaLibrary
   alias LiveBeatsWeb.CoreComponents

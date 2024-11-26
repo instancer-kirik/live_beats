@@ -1,9 +1,9 @@
 defmodule LiveBeatsWeb.UserAuthTest do
   use LiveBeatsWeb.ConnCase, async: true
 
-  alias LiveBeats.Accounts
+  alias LiveBeats.Acts
   alias LiveBeatsWeb.UserAuth
-  import LiveBeats.AccountsFixtures
+  import LiveBeats.ActsFixtures
 
   setup %{conn: conn} do
     conn =
@@ -20,7 +20,7 @@ defmodule LiveBeatsWeb.UserAuthTest do
       assert id = get_session(conn, :user_id)
       assert get_session(conn, :live_socket_id) == "users_sessions:#{id}"
       assert redirected_to(conn) == "/chrismccord"
-      assert Accounts.get_user!(id)
+      assert Acts.get_user!(id)
     end
 
     test "clears everything previously stored in the session", %{conn: conn, user: user} do

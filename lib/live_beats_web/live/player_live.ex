@@ -1,7 +1,7 @@
 defmodule LiveBeatsWeb.PlayerLive do
   use LiveBeatsWeb, {:live_view, container: {:div, []}}
 
-  alias LiveBeats.{Accounts, MediaLibrary}
+  alias LiveBeats.{Acts, MediaLibrary}
   alias LiveBeats.MediaLibrary.Song
   alias LiveBeatsWeb.Presence
 
@@ -180,7 +180,7 @@ defmodule LiveBeatsWeb.PlayerLive do
     %{current_user: current_user} = socket.assigns
 
     if connected?(socket) do
-      Accounts.subscribe(current_user.id)
+      Acts.subscribe(current_user.id)
     end
 
     socket =
@@ -198,7 +198,7 @@ defmodule LiveBeatsWeb.PlayerLive do
   end
 
   defp switch_profile(socket, nil) do
-    current_user = Accounts.update_active_profile(socket.assigns.current_user, nil)
+    current_user = Acts.update_active_profile(socket.assigns.current_user, nil)
 
     if profile = connected?(socket) and socket.assigns.profile do
       Presence.untrack_profile_user(profile, current_user.id)
@@ -214,7 +214,7 @@ defmodule LiveBeatsWeb.PlayerLive do
     profile = get_profile(profile_user_id)
 
     if profile && connected?(socket) do
-      current_user = Accounts.update_active_profile(current_user, profile.user_id)
+      current_user = Acts.update_active_profile(current_user, profile.user_id)
       # untrack last profile the user was listening
       if socket.assigns.profile do
         Presence.untrack_profile_user(socket.assigns.profile, current_user.id)
@@ -303,7 +303,7 @@ defmodule LiveBeatsWeb.PlayerLive do
   end
 
   def handle_info(
-        {Accounts, %Accounts.Events.ActiveProfileChanged{new_profile_user_id: user_id}},
+        {Acts, %Acts.Events.ActiveProfileChanged{new_profile_user_id: user_id}},
         socket
       ) do
     if user_id do
@@ -429,7 +429,7 @@ defmodule LiveBeatsWeb.PlayerLive do
   end
 
   defp get_profile(user_id) do
-    user_id && Accounts.get_user!(user_id) |> MediaLibrary.get_profile!()
+    user_id && Acts.get_user!(user_id) |> MediaLibrary.get_profile!()
   end
 
   defp profile_changed?(nil = _prev_profile, nil = _new_profile), do: false

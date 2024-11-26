@@ -2,7 +2,7 @@ import Config
 
 config :live_beats, :files,
   uploads_dir: Path.expand("../priv/uploads", __DIR__),
-  host: [scheme: "http", host: "localhost", port: 4000],
+  host: [scheme: "http", host: "localhost", port: String.to_integer(System.get_env("LIVE_BEATS_PORT", "4005"))],
   server_ip: "127.0.0.1",
   hostname: "localhost",
   transport_opts: []
@@ -13,10 +13,10 @@ config :live_beats, :github,
 
 # Configure your database
 config :live_beats, LiveBeats.Repo,
+  database: "veix_live_beats_dev",
   username: "postgres",
-  password: "postgres",
+  password: "root",
   hostname: "localhost",
-  database: "live_beats_dev",
   migration_lock: false,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
@@ -31,14 +31,14 @@ config :live_beats, LiveBeats.Repo,
 config :live_beats, LiveBeatsWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {0, 0, 0, 0}, port: 4000],
+  http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("LIVE_BEATS_PORT", "4005"))],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
   watchers: [
     # Start the esbuild watcher by calling Esbuild.install_and_run(:default, args)
-    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:app, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:app, ~w(--watch)]}
 
     # npx: [
     #    "tailwindcss",

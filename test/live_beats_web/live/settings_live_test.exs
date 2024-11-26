@@ -2,7 +2,7 @@ defmodule LiveBeatsWeb.SettingsLiveTest do
   use LiveBeatsWeb.ConnCase
 
   # import Phoenix.LiveViewTest
-  import LiveBeats.AccountsFixtures
+  import LiveBeats.ActsFixtures
 
   setup %{conn: conn} do
     current_user = user_fixture(%{username: "chrismccord"})

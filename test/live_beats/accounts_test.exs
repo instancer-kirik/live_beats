@@ -1,20 +1,20 @@
-defmodule LiveBeats.AccountsTest do
+defmodule LiveBeats.ActsTest do
   use LiveBeats.DataCase
 
-  import LiveBeats.AccountsFixtures
+  import LiveBeats.ActsFixtures
 
-  alias LiveBeats.Accounts
+  alias LiveBeats.Acts
 
   describe "get_user!/1" do
     test "raises if id is invalid" do
       assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_user!(-1)
+        Acts.get_user!(-1)
       end
     end
 
     test "returns the user with the given id" do
       %{id: id} = user = user_fixture()
-      assert %Accounts.User{id: ^id} = Accounts.get_user!(user.id)
+      assert %Acts.User{id: ^id} = Acts.get_user!(user.id)
     end
   end
 
@@ -27,7 +27,7 @@ defmodule LiveBeats.AccountsTest do
         "html_url" => "https://example.com"
       }
 
-      assert {:ok, _user} = Accounts.register_github_user("chris@example.com", info, [], "123")
+      assert {:ok, _user} = Acts.register_github_user("chris@example.com", info, [], "123")
     end
   end
 end

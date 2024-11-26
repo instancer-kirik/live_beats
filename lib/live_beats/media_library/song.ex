@@ -3,7 +3,7 @@ defmodule LiveBeats.MediaLibrary.Song do
   import Ecto.Changeset
 
   alias LiveBeats.MediaLibrary.Song
-  alias LiveBeats.Accounts
+  alias LiveBeats.Acts
 
   schema "songs" do
     field :album_artist, :string
@@ -22,7 +22,7 @@ defmodule LiveBeats.MediaLibrary.Song do
     field :mp3_filesize, :integer, default: 0
     field :server_ip, :string
     field :position, :integer, default: 0
-    belongs_to :user, Accounts.User
+    belongs_to :user, Acts.User
     belongs_to :genre, LiveBeats.MediaLibrary.Genre
 
     embeds_one :transcript, Transcript do
@@ -50,7 +50,7 @@ defmodule LiveBeats.MediaLibrary.Song do
     )
   end
 
-  def put_user(%Ecto.Changeset{} = changeset, %Accounts.User{} = user) do
+  def put_user(%Ecto.Changeset{} = changeset, %Acts.User{} = user) do
     put_assoc(changeset, :user, user)
   end
 

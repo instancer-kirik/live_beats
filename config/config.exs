@@ -10,6 +10,11 @@ import Config
 config :live_beats,
   ecto_repos: [LiveBeats.Repo]
 
+# Configure Ecto to use binary_id by default
+config :live_beats, LiveBeats.Repo,
+  migration_primary_key: [type: :binary_id],
+  migration_foreign_key: [type: :binary_id]
+
 config :live_beats, :files, admin_usernames: []
 
 # Configures the endpoint
@@ -17,7 +22,7 @@ config :live_beats, LiveBeatsWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "55naB2xjgnsDeN+kKz7xoeqx3vIPcpCkAmg+CoVR/F7iZ5MQgNE6ykiNXoFa7wcC",
   pubsub_server: LiveBeats.PubSub,
-  live_view: [signing_salt: "OHBVr+w4"],
+  live_view: [signing_salt: "_CLvmXLvmXpMV1yHv+J+"],
   render_errors: [
     formats: [html: LiveBeatsWeb.ErrorHTML, json: LiveBeatsWeb.ErrorJSON],
     layout: false

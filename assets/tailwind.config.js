@@ -1,8 +1,11 @@
 // See the Tailwind configuration guide for advanced usage
 // https://tailwindcss.com/docs/configuration
+
+const baseConfig = require("../../../assets/tailwind.config.js")
 const plugin = require("tailwindcss/plugin")
 
 module.exports = {
+  presets: [baseConfig],
   content: [
     "./js/**/*.js",
     "../lib/*_web.ex",
